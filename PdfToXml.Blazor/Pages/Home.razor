@@ -1,0 +1,445 @@
+﻿@page "/"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@using System.Text.Json
+@using System.Text
+
+<h1>Select XML Map and Corresponding PDF</h1>
+<p style="color:#555">
+    Each XML file spatially describes its paired PDF. Select both and process them together.
+</p>
+<div class="main-container">
+    <!-- LEFT PANE -->
+    <div class="left-pane">
+        <!-- NEW MAPPING UPLOAD -->
+        <div style="display:flex; gap:1rem; margin:1rem 0; align-items:center;">
+            <InputFile OnChange="OnXmlSelected" accept=".xml" />
+            <InputFile OnChange="OnPdfSelected" accept=".pdf" />
+            <button @onclick="AddMapping"
+                    disabled="@(selectedXml == null || selectedPdf == null)"
+                    style="padding:0.4rem 0.8rem;">
+                Add Mapping
+            </button>
+        </div>
+        @if (uploadMappings.Any()) {
+            <h3>Pending Uploads</h3>
+            <table style="width:100%; max-width:1000px; border-collapse:collapse;">
+                <thead style="background:#f0f0f0;">
+                    <tr>
+                        <th>Map Xml</th>
+                        <th>PDF File</th>
+                        <th>Progress / Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var map in uploadMappings) {
+                        <tr class="pending-row @(selectedPendingMapping == map ? "selected-row" : "")">
+                            <td style="cursor:pointer; text-decoration:underline; color:blue;"
+                                @onclick="() => LoadPendingXml(map)">
+                                @map.XmlFile.Name
+                            </td>
+                            <td style="cursor:pointer; text-decoration:underline; color:blue;"
+                                @onclick="() => LoadPendingPdf(map)">
+                                @map.PdfFile.Name
+                            </td>
+                            <td style="width:260px;">
+                                @if (map.IsUploading) {
+                                    <div style="background:#eee; height:14px; border-radius:6px;">
+                                        <div style="
+                                                                                            width:@map.Progress%;
+                                                                                            background:#2a9d8f;
+                                                                                            height:100%;
+                                                                                            border-radius:6px;">
+                                        </div>
+                                    </div>
+                                    <small>@map.Progress% uploaded</small>
+                                } else {
+                                    <button @onclick="() => Upload(map)"
+                                            style="background:#2a9d8f; color:white; border:none;
+                                                                                                   padding:0.4rem 0.8rem; border-radius:5px;">
+                                        Upload
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        <hr />
+        <!-- EXISTING MAPPINGS -->
+        <div style="display:flex; align-items:center; width:100%;">
+            <h3 style="margin:0;">Existing Mappings</h3>
+            <div style="margin-left:auto; display:flex; gap:0.75rem;">
+                <button @onclick="OnDeleteClicked" style="background:#e63946;color:white;border:none;padding:0.35rem 0.7rem;border-radius:5px;cursor:pointer;">
+                    Delete
+                </button>
+                <button @onclick="OnParseClicked"
+                        disabled="@isParsing"
+                        style="background:@(isParsing ? "#FF5722" : "#2a9d8f");
+           color:white;
+           border:none;
+           padding:0.35rem 0.7rem;
+           border-radius:5px;
+           cursor:pointer;">
+                    @(isParsing ? "Parsing…" : "Parse")
+                </button>
+
+            </div>
+        </div>
+        @if (existingMappings == null) {
+            <p>Loading mappings…</p>
+        } else if (!existingMappings.Any()) {
+            <p style="font-style:italic; color:#777;">No mappings found.</p>
+        } else {
+            @if (isParsing) {
+                <div style="margin-top:1rem;">
+                    <div style="background:#eee; width:100%; height:20px; border-radius:6px;">
+                        <div style="
+                                width:@parseProgress%;
+                                background:#2a9d8f;
+                                height:100%;
+                                border-radius:6px;">
+                        </div>
+                    </div>
+                    <small>@parseProgress% - @parseMessage</small>
+                </div>
+            }
+
+
+            <table style="width:100%; min-width:0; border-collapse:collapse;">
+                <thead style="background:#f8f8f8;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Map Xml</th>
+                        <th>PDF File</th>
+                        <th>Folder</th>
+                        <th>Uploaded (UTC)</th>
+                        <th>Status</th>
+                        <th>Parse</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in existingMappings) {
+                        <tr class="existing-row @(selectedExistingMapping == m ? "selected-row" : "")">
+                            <td>@m.Id</td>
+                            <td style="cursor:pointer; text-decoration:underline; color:blue;"
+                                @onclick="() => LoadExistingXml(m)">
+                                @m.xmlMapFileName
+                            </td>
+                            <td style="cursor:pointer; text-decoration:underline; color:blue;"
+                                @onclick="() => LoadExistingPdf(m)">
+                                @m.pdfFileName
+                            </td>
+                            <td>@(m.RepositoryPath?.Length > 20 ? m.RepositoryPath.Substring(0, 20) + "…" : m.RepositoryPath)</td>
+                            <td>@m.uploadedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@m.status</td>
+                            <td style="width:120px; text-align:center;">
+                                <input type="checkbox" @bind="m.IsChecked" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+    <div class="splitter"></div>
+    <!-- RIGHT PANE -->
+    <div class="right-pane">
+        <div class="tabs">
+            <div class="tab @(activeTab == "pdf" ? "active" : "")"
+                 @onclick='() => activeTab = "pdf"'>
+                PDF
+            </div>
+            <div class="tab @(activeTab == "xml" ? "active" : "")"
+                 @onclick='() => activeTab = "xml"'>
+                Map Xml
+            </div>
+            
+            <div class="tab @(activeTab == "parsed" ? "active" : "")"
+                 @onclick='() => activeTab = "parsed"'>
+                Parsed
+            </div>
+
+            
+
+
+        </div>
+        <div class="tab-content">
+            @switch (activeTab) {
+                case "xml":
+                    @if (!string.IsNullOrEmpty(xmlContent)) {
+                        <pre class="language-xml">
+                        <code class="language-xml">@xmlContent</code>
+                                    </pre>
+                    } else {
+                        <p>No XML content loaded.</p>
+                    }
+                    break;
+                case "parsed":
+                    <pre class="language-xml">
+                    <code class="language-xml">@parsedXml</code>
+                            </pre>
+                    break;
+
+                case "pdf":
+                    @if (!string.IsNullOrEmpty(pdfUrl)) {
+                        <iframe src="@pdfUrl" style="width:100%; height:600px;"></iframe>
+                    } else {
+                        <p>No PDF selected.</p>
+                    }
+                    break;
+            }
+        </div>
+    </div>
+</div>
+<style>
+    .selected-row {
+        background-color: #d0e7ff !important;
+    }
+</style>
+@code {
+    private IBrowserFile? selectedXml;
+    private IBrowserFile? selectedPdf;
+    private List<MappingItem> uploadMappings = new();
+    private List<DocumentMapping>? existingMappings;
+    private string activeTab = "left";
+    private string xmlContent = string.Empty;
+    private string pdfUrl = string.Empty;
+    private string parsedXml = string.Empty;
+    private MappingItem? selectedPendingMapping;
+    private DocumentMapping? selectedExistingMapping;
+
+    private int parseProgress = 0;
+    private string parseMessage = string.Empty;
+    private bool isParsing = false;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) await JS.InvokeVoidAsync("initSplitter");
+        if (!string.IsNullOrEmpty(xmlContent)) await JS.InvokeVoidAsync("highlightXml");
+    }
+    protected override async Task OnInitializedAsync() {
+        try {
+            existingMappings = await Http.GetFromJsonAsync<List<DocumentMapping>>("api/document-mappings") ?? new();
+        } catch {
+            existingMappings = new();
+        }
+    }
+    private async Task OnXmlSelected(InputFileChangeEventArgs e) {
+        selectedXml = e.File;
+        const long maxSize = 50 * 1024 * 1024;
+        using var stream = selectedXml.OpenReadStream(maxSize);
+        using var reader = new StreamReader(stream);
+        xmlContent = await reader.ReadToEndAsync();
+        activeTab = "xml";
+    }
+    private async Task OnPdfSelected(InputFileChangeEventArgs e) {
+        selectedPdf = e.File;
+        const long maxSize = 100 * 1024 * 1024;
+        using var stream = selectedPdf.OpenReadStream(maxSize);
+        var buffer = new byte[selectedPdf.Size];
+        await stream.ReadAsync(buffer, 0, buffer.Length);
+        pdfUrl = $"data:application/pdf;base64,{Convert.ToBase64String(buffer)}";
+        activeTab = "pdf";
+    }
+    private void AddMapping() {
+        if (selectedXml == null || selectedPdf == null) return;
+        uploadMappings.Add(new MappingItem { XmlFile = selectedXml, PdfFile = selectedPdf });
+        selectedXml = null;
+        selectedPdf = null;
+    }
+    private async Task Upload(MappingItem item) {
+        item.IsUploading = true;
+        const long maxSize = 100 * 1024 * 1024;
+        using var content = new MultipartFormDataContent();
+
+        async Task AddFile(IBrowserFile file) {
+            var stream = file.OpenReadStream(maxSize);
+            var progress = new ProgressableStreamContent(
+                stream,
+                uploaded => {
+                    item.UploadedBytes += uploaded;
+                    InvokeAsync(StateHasChanged);
+                });
+            progress.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            content.Add(progress, "files", file.Name);
+        }
+
+        await AddFile(item.XmlFile);
+        await AddFile(item.PdfFile);
+
+        var response = await Http.PostAsync("api/upload/map-pdf", content);
+        item.IsUploading = false;
+
+        if (response.IsSuccessStatusCode) {
+            uploadMappings.Remove(item);
+            existingMappings = await Http.GetFromJsonAsync<List<DocumentMapping>>("api/document-mappings");
+        }
+    }
+    private async Task ParseExisting(DocumentMapping mapping) {
+        // TODO: call parsing API for existing mapping
+        selectedExistingMapping = mapping;
+        activeTab = "xml";
+        await Task.CompletedTask;
+    }
+    private async Task LoadPendingXml(MappingItem item) {
+        selectedPendingMapping = item;
+        selectedExistingMapping = null;
+        const long maxSize = 50 * 1024 * 1024;
+        xmlContent = string.Empty;
+        StateHasChanged();
+        using var stream = item.XmlFile.OpenReadStream(maxSize);
+        using var reader = new StreamReader(stream);
+        xmlContent = await reader.ReadToEndAsync();
+        activeTab = "xml";
+    }
+    private async Task LoadPendingPdf(MappingItem item) {
+        selectedPendingMapping = item;
+        selectedExistingMapping = null;
+        const long maxSize = 100 * 1024 * 1024;
+        using var stream = item.PdfFile.OpenReadStream(maxSize);
+        var buffer = new byte[item.PdfFile.Size];
+        await stream.ReadAsync(buffer, 0, buffer.Length);
+        pdfUrl = $"data:application/pdf;base64,{Convert.ToBase64String(buffer)}";
+        activeTab = "pdf";
+    }
+    private async Task LoadExistingXml(DocumentMapping mapping) {
+        selectedExistingMapping = mapping;
+        selectedPendingMapping = null;
+        xmlContent = string.Empty;
+        StateHasChanged();
+        xmlContent = await Http.GetStringAsync($"api/document-mappings/xml/{mapping.Id}");
+        activeTab = "xml";
+    }
+    private async Task LoadExistingPdf(DocumentMapping mapping) {
+        selectedExistingMapping = mapping;
+        selectedPendingMapping = null;
+        var pdfBytes = await Http.GetByteArrayAsync($"api/document-mappings/pdf/{mapping.Id}");
+        pdfUrl = $"data:application/pdf;base64,{Convert.ToBase64String(pdfBytes)}";
+        activeTab = "pdf";
+    }
+
+
+
+
+    private async Task ParseMap(Guid id) {
+        isParsing = true;
+        parseProgress = 0;
+        parseMessage = "Starting…";
+        parsedXml = string.Empty;
+        activeTab = "parsed";
+        StateHasChanged();
+
+        try {
+            // 1️⃣ Start the parsing on the server
+            var startResponse = await Http.PostAsync($"api/document-mappings/{id}/parse-start", null);
+            startResponse.EnsureSuccessStatusCode();
+
+            // 2️⃣ Poll the server for progress
+            while (true) {
+                await Task.Delay(500); // poll every 500ms
+
+                var progressResponse = await Http.GetFromJsonAsync<ParseMessage>($"api/document-mappings/{id}/progress");
+                if (progressResponse == null)
+                    continue;
+
+                parseProgress = progressResponse.Percent ?? 0;
+                parseMessage = progressResponse.Message ?? "";
+
+                await InvokeAsync(StateHasChanged);
+
+                if (progressResponse.Type == "result") {
+                    parsedXml = progressResponse.Xml ?? "";
+                    parseProgress = 100;
+                    parseMessage = "Completed";
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+            parsedXml = $"Error: {ex.Message}";
+            parseMessage = "Failed";
+        }
+        finally {
+            isParsing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+
+
+
+
+
+
+    private class ParseMessage {
+        public string? Type { get; set; }
+        public int? Percent { get; set; }
+        public string? Message { get; set; }
+        public string? Xml { get; set; }
+    }
+
+
+
+
+    private async Task OnDeleteClicked() {
+        var anyChecked = existingMappings.Any(m => m.IsChecked);
+        if (!anyChecked) return;
+        var selectedMappings = existingMappings.Where(m => m.IsChecked).ToList();
+        if (!selectedMappings.Any()) return;
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete the selected mappings?"
+        );
+        if (confirmed) {
+            foreach (var m in selectedMappings) {
+                try {
+                    var response = await Http.PostAsync($"api/document-mappings/{m.Id}/delete", null);
+                    if (response.IsSuccessStatusCode) {
+                        existingMappings.Remove(m);
+                    } else {
+                        Console.WriteLine($"Failed to delete mapping {m.Id}: {response.StatusCode}");
+                    }
+                } catch (Exception ex) {
+                    Console.WriteLine($"Error deleting mapping {m.Id}: {ex.Message}");
+                }
+            }
+        }
+    }
+
+    private async Task OnParseClicked() {
+        if (existingMappings == null) return;
+
+        var selected = existingMappings.Where(m => m.IsChecked).ToList();
+        if (!selected.Any()) return;
+
+        foreach (var m in selected) {
+            await ParseMap(m.Id);
+        }
+    }
+
+
+
+
+
+    class MappingItem {
+        public IBrowserFile XmlFile { get; set; } = default!;
+        public IBrowserFile PdfFile { get; set; } = default!;
+        public long UploadedBytes { get; set; }
+        public long TotalBytes => XmlFile.Size + PdfFile.Size;
+        public int Progress => TotalBytes == 0 ? 0 : (int)(UploadedBytes * 100 / TotalBytes);
+        public bool IsUploading { get; set; }
+    }
+    // local wrap over Model for existing document mappings
+    class DocumentMapping {
+        public Guid Id { get; set; }
+        public string xmlMapFileName { get; set; } = string.Empty;
+        public string pdfFileName { get; set; } = string.Empty;
+        public string RepositoryPath { get; set; } = string.Empty;
+        public DateTime uploadedAtUtc { get; set; }
+        public string status { get; set; } = string.Empty;
+        public bool IsChecked { get; set; }
+    }
+}

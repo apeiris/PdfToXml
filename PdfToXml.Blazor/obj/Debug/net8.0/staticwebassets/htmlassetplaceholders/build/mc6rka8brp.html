@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PdfToXml.Blazor</title>
+    <base href="/" />
+    
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="PdfToXml.Blazor.styles.css" rel="stylesheet" />
+
+    <!-- Prism CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+    <!-- Prism core -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <!-- XML language support -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+    <script src="js/prismHelper.js"></script>
+ 
+    <script type="importmap">{
+  "imports": {
+    "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.mv535bwyet.js",
+    "./js/prismHelper.js": "./js/prismHelper.y68y8xnga5.js",
+    "./js/splitter.js": "./js/splitter.73bea3i9j1.js",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.min.js": "./lib/bootstrap/dist/js/bootstrap.bundle.min.hd3gran6i8.js",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.js": "./lib/bootstrap/dist/js/bootstrap.bundle.tzf1qftsp4.js",
+    "./lib/bootstrap/dist/js/bootstrap.esm.js": "./lib/bootstrap/dist/js/bootstrap.esm.4hgw28qr3w.js",
+    "./lib/bootstrap/dist/js/bootstrap.esm.min.js": "./lib/bootstrap/dist/js/bootstrap.esm.min.8vyfqsqgz1.js",
+    "./lib/bootstrap/dist/js/bootstrap.min.js": "./lib/bootstrap/dist/js/bootstrap.min.4d85u1mtcx.js",
+    "./lib/bootstrap/dist/js/bootstrap.js": "./lib/bootstrap/dist/js/bootstrap.no0ogadjdv.js"
+  },
+  "scopes": {},
+  "integrity": {
+    "./_framework/blazor.webassembly.js": "sha256-gvHfnndfEu1tRf0rFb5988rWq7ITIotOaE8+AMbKYbc=",
+    "./_framework/blazor.webassembly.mv535bwyet.js": "sha256-gvHfnndfEu1tRf0rFb5988rWq7ITIotOaE8+AMbKYbc=",
+    "./_framework/dotnet.js": "sha256-MVfdBJ6e7axwvjhKnKkzo13y4YElMb5/59I8Txh+b4M=",
+    "./_framework/dotnet.native.js": "sha256-NljIbpK/1KCj0+knpX8U77Rbl5kTtfFIuFjK7AuczEw=",
+    "./_framework/dotnet.runtime.js": "sha256-TGUqQm2/C+r+yZ5BCjd72qyLw9wv0KPFKzKXk/giiyY=",
+    "./js/prismHelper.js": "sha256-+vnAqjylAUoowcXGA75We1INBGA4nNGwJfCDEyYu7As=",
+    "./js/prismHelper.y68y8xnga5.js": "sha256-+vnAqjylAUoowcXGA75We1INBGA4nNGwJfCDEyYu7As=",
+    "./js/splitter.73bea3i9j1.js": "sha256-XTofi/S0PPnUUxKp6sagZqNaYOGM5R8Bv1Muc6Anxps=",
+    "./js/splitter.js": "sha256-XTofi/S0PPnUUxKp6sagZqNaYOGM5R8Bv1Muc6Anxps=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.js": "sha256-Oc13iH8a1MQuQDADAR83Ki5hxWLHONpY4MTTjdSLqg0=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.min.hd3gran6i8.js": "sha256-6zfk2L8R3wCgRbZzpkEi7UYC2bc6fYGIgFfNeqyOWnQ=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.min.js": "sha256-6zfk2L8R3wCgRbZzpkEi7UYC2bc6fYGIgFfNeqyOWnQ=",
+    "./lib/bootstrap/dist/js/bootstrap.bundle.tzf1qftsp4.js": "sha256-Oc13iH8a1MQuQDADAR83Ki5hxWLHONpY4MTTjdSLqg0=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.4hgw28qr3w.js": "sha256-aN06ESd8nXBgVhbnJER60dJl0/OneHYbjY3pB5DP3cY=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.js": "sha256-aN06ESd8nXBgVhbnJER60dJl0/OneHYbjY3pB5DP3cY=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.min.8vyfqsqgz1.js": "sha256-REjSeieVKd00nAKwd6dv7MMhuVKvKctPmLI4iDRs/cc=",
+    "./lib/bootstrap/dist/js/bootstrap.esm.min.js": "sha256-REjSeieVKd00nAKwd6dv7MMhuVKvKctPmLI4iDRs/cc=",
+    "./lib/bootstrap/dist/js/bootstrap.js": "sha256-id7e7bZYDsmy17LHLyoQu0iWzrDjryPIKJbAQiqVg+k=",
+    "./lib/bootstrap/dist/js/bootstrap.min.4d85u1mtcx.js": "sha256-aCTIqw9op0XQGYnNe1649V7fnihACD48OP3M8BP2xVM=",
+    "./lib/bootstrap/dist/js/bootstrap.min.js": "sha256-aCTIqw9op0XQGYnNe1649V7fnihACD48OP3M8BP2xVM=",
+    "./lib/bootstrap/dist/js/bootstrap.no0ogadjdv.js": "sha256-id7e7bZYDsmy17LHLyoQu0iWzrDjryPIKJbAQiqVg+k="
+  }
+}</script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+<!--   <script src="_framework/blazor.webassembly.mv535bwyet.js"></script> -->
+    <script src="_framework/blazor.webassembly.js"></script>
+
+    <script src="js/splitter.js"></script>
+</body>
+
+</html>

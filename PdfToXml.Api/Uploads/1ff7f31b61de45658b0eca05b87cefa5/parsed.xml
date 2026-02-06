@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<pdfMap client="IrisSystems" document="PurchaseOrder" rootName="po" pdfSource="c:\\temp\\PO4.pdf">
+  <po number="10346" date="2025-09-04">
+    <parties>
+      <buyer name="NextGen Tech Corp">
+        <delivery date="2025-09-20"></delivery>
+        <address street="77 Bay Street" city="Toronto" postcode="ON M5J 2L9" country="Canada"></address>
+        <contact telephone="+1 (416) 555-7789" email="finance@nextgen.com"></contact>
+      </buyer>
+      <seller name="Metro Office Furniture Co.">
+        <address street="1750 Market St" city="Denver" postcode="CO 80202" country="USA"></address>
+        <contact telephone="+1 (303) 555-9922" email="sales@metrooffice.com"></contact>
+      </seller>
+    </parties>
+    <po1loop>
+      <line description="Workstations (Cubicle)" partnumber="MOF-WS600" qty="8" unitPrice="$ 850.00" lineTotal="6,800.00"></line>
+      <line description="Storage Cabinets" partnumber="MOF-SC100" qty="6" unitPrice="$ 295.00" lineTotal="1,770.00"></line>
+      <line description="Task Chairs" partnumber="MOF-TC210" qty="15" unitPrice="$ 175.00" lineTotal="2,625.00"></line>
+      <line description="Breakroom Tables" partnumber="MOF-BT50" qty="4" unitPrice="$ 310.00" lineTotal="1,240.00"></line>
+      <line description="Rambutan" partnumber="RAM-BUT1" qty="20" unitPrice="$ 40.00" lineTotal="800.00"></line>
+    </po1loop>
+  </po>
+</pdfMap>
