@@ -1,6 +1,15 @@
 [
   {
     "Name": "apifirst",
-    "Projects": []
+    "Projects": [
+      {
+        "Path": "PdfToXml.Blazor\\PdfToXml.Blazor.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "PdfToXml.Api\\PdfToXml.Api.csproj",
+        "Action": "Start"
+      }
+    ]
   }
 ]
