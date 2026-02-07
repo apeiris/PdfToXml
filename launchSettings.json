@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "Launch Entire System": {
+      "commandName": "Compound",
+      "projects": {
+        "PdfToXml.Api": {
+          "profile": "https"
+        },
+        "PdfoXml.Blazor": {
+          "profile": "https"
+        }
+      }
+    }
+  }
+}
