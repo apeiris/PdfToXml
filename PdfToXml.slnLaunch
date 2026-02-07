@@ -1,12 +1,6 @@
 [
   {
-    "Projects": [
-      {
-        "Action": "Start"
-      },
-      {
-        "Action": "Start"
-      }
-    ]
+    "Name": "apifirst",
+    "Projects": []
   }
 ]
