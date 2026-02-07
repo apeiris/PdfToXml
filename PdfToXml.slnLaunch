@@ -1,13 +1,10 @@
 [
   {
-    "Name": "New Profile",
     "Projects": [
       {
-        "Path": "PdfToXml.Api\\PdfToXml.Api.csproj",
         "Action": "Start"
       },
       {
-        "Path": "PdfToXml.Blazor\\PdfToXml.Blazor.csproj",
         "Action": "Start"
       }
     ]
